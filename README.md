@@ -1,4 +1,4 @@
-# Cocos2d-x
+# Cocos2d-x (Multiplatform IOS/Android/Desktop)
 
 2D_PLATFORM_GAME_SAMURAI
 
