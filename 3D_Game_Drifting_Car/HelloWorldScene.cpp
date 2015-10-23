@@ -90,6 +90,7 @@ bool HelloWorld::init()
 	this->addChild(robox);
 	**/
 
+/**
 	Physics3DRigidBodyDes xrbd_cabine;
 	xrbd_cabine.disableSleep = true;
 	xrbd_cabine.mass = 50.0f;
@@ -116,9 +117,9 @@ bool HelloWorld::init()
 	//xconstraint5->setLimit(-90, 90);
 	psychics_scene->getPhysics3DWorld()->addPhysics3DConstraint(xconstraint6);
 
-
+**/
 	
-	//////////////////////////////////////////////// car
+        //Create Car
 	Physics3DRigidBodyDes rbd_cabine;
 	rbd_cabine.disableSleep = true;
 	rbd_cabine.mass = 500.0f;
