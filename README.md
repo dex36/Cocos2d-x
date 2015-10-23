@@ -15,4 +15,25 @@ Add enemies.
 
 Add menu.
 
+Set everything to classes.
+
+
+3D_Game_Drifting_Car
+
+![alt tag](http://pasteboard.co/1Bl268lf.png)
+
+In the future:
+
+Add skybox.
+
+Add car model.
+
+Add terrain city or models.
+
+Add lights/fog.
+
+Add menu.
+
+And more cool stuffs.
+
 
