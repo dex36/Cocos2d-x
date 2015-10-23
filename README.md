@@ -6,6 +6,7 @@
 
 
 In the future:
+
 Add front and background to make fake 2,5D effect.
 
 Add full slice textures.
