@@ -20,7 +20,7 @@ Set everything to classes.
 
 3D_Game_Drifting_Car
 
-![alt tag](http://s30.postimg.org/x9alawjfl/car.png)
+![alt tag](http://s24.postimg.org/9aod07u9x/Bez_tytu_u.png)
 
 In the future:
 
