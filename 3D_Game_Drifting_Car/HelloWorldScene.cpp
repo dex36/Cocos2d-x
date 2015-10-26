@@ -2,6 +2,10 @@
 #include "AppMacros.h"
 #include "GL\glew.h"
 
+#define ARRAY_SIZE_X 4
+#define ARRAY_SIZE_Y 3
+#define ARRAY_SIZE_Z 4
+
 USING_NS_CC;
 
 HelloWorldHud *HelloWorld::_hud = NULL;
@@ -12,8 +16,8 @@ Scene* HelloWorld::scene()
 	psychics_scene->getPhysics3DWorld();
 	psychics_scene->getPhysics3DWorld()->setGravity(Vec3(0, -20, 0));
 	psychics_scene->getPhysicsWorld()->setAutoStep(false);
-	psychics_scene->getPhysics3DWorld()->stepSimulate(1 / 100);
-	psychics_scene->getPhysics3DWorld()->setDebugDrawEnable(true);
+	psychics_scene->getPhysics3DWorld()->stepSimulate(1 / 200);
+	//psychics_scene->getPhysics3DWorld()->setDebugDrawEnable(true);
 
 	auto layer = HelloWorld::create();
 	layer->SetPhysics3DWOrld(psychics_scene->getPhysics3DWorld());
@@ -36,13 +40,16 @@ bool HelloWorld::init()
     auto visibleSize = Director::getInstance()->getVisibleSize();
     auto origin = Director::getInstance()->getVisibleOrigin();
 
-	camera = Camera::createPerspective(30, (float)visibleSize.width / visibleSize.height, 1.0, 5000);
+
+
+	camera = Camera::createPerspective(30, (float)visibleSize.width / visibleSize.height, 1.0, 1000);
 	camera->setBackgroundBrush(CameraBackgroundBrush::createColorBrush(Color4F(0.0f, 1.0f, 1.0f, 0.5f), 1.0f));
 	camera->setPosition3D(Vec3(0.0f, 50.0f, 100.0f));
 	camera->lookAt(Vec3(0.0f, 0.0f, 0.0f), Vec3(0.0, 1.0, 0.0));
 	camera->setCameraFlag(CameraFlag::USER2);
 	this->addChild(camera);
 
+	/**
 	//Create Plane
 	Physics3DRigidBodyDes rbd_plan;
 	rbd_plan.mass = 0.0f;
@@ -66,72 +73,46 @@ bool HelloWorld::init()
 	component_plan->setSyncFlag(Physics3DComponent::PhysicsSyncFlag::NONE);
 	_plan->setCameraMask((unsigned short)CameraFlag::USER2);
 	this->addChild(_plan, 1);
-
-	//Creat BOX
-	/**
-	Physics3DRigidBodyDes rbDesxs;
-	rbDesxs.disableSleep = true;
-	rbDesxs.mass = 1.0f;
-	rbDesxs.originalTransform.translate(camera->getPosition3D());
-	rbDesxs.shape = Physics3DShape::createBox(Vec3(5, 1.0f, 5));
-	rbds = Physics3DRigidBody::create(&rbDesxs);
-	auto rbcs = Physics3DComponent::create(rbds);
-	robox = Sprite3D::create("box.c3t");
-	robox->setTexture("Gun.png");
-	robox->setPosition3D(Vec3(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y, 0));
-	robox->setPositionZ(0);
-	robox->setPositionY(10);
-	robox->setPositionX(0);
-	robox->setGlobalZOrder(-1);
-	robox->addComponent(rbcs);
-	rbcs->syncNodeToPhysics();
-	rbcs->setSyncFlag(Physics3DComponent::PhysicsSyncFlag::PHYSICS_TO_NODE);
-	robox->setCameraMask((unsigned short)CameraFlag::USER2);
-	this->addChild(robox);
 	**/
+	Terrain::DetailMap r("dirt.jpg");
+	Terrain::TerrainData data("heightmap16.jpg", "alphamap.png", r, r, r, r, Size(32, 32), 5.0f, 1.0f);
+	auto _terrain = Terrain::create(data, Terrain::CrackFixedType::SKIRT);
+	_terrain->setPosition3D(Vec3(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y, 0));
+	_terrain->setPositionZ(0);
+	_terrain->setPositionY(0);
+	_terrain->setPositionX(0);
+	_terrain->setLODDistance(64, 128, 192);
+	_terrain->setDrawWire(false);
+	_terrain->setMaxDetailMapAmount(4);
+	_terrain->setSkirtHeightRatio(2);
+	_terrain->setCameraMask((unsigned short)CameraFlag::USER2);
+	//create terrain
+	std::vector<float> heidata = _terrain->getHeightData();
+	auto size = _terrain->getTerrainSize();
+	Physics3DColliderDes colliderDes;
+	colliderDes.shape = Physics3DShape::createHeightfield(size.width, size.height, &heidata[0], 1.0f, _terrain->getMinHeight(), _terrain->getMaxHeight(), true, false, true);
+	auto collider = Physics3DCollider::create(&colliderDes);
+	auto component = Physics3DComponent::create(collider);
+	_terrain->addComponent(component);
+	component->syncNodeToPhysics();
+	component->setSyncFlag(Physics3DComponent::PhysicsSyncFlag::NONE);
+	this->addChild(_terrain);
 
-/**
-	Physics3DRigidBodyDes xrbd_cabine;
-	xrbd_cabine.disableSleep = true;
-	xrbd_cabine.mass = 50.0f;
-	xrbd_cabine.shape = Physics3DShape::createBox(Vec3(20, 20.0f, 20));
-	auto xphysics_rbd_cabine = Physics3DRigidBody::create(&xrbd_cabine);
-	auto xcabine_component = Physics3DComponent::create(xphysics_rbd_cabine);
-	auto xcar_cabine = Sprite3D::create("box.c3t");
-	xcar_cabine->setTexture("Gun.png");
-	xcar_cabine->setPosition3D(Vec3(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y, 0));
-	xcar_cabine->setPositionZ(30);
-	xcar_cabine->setPositionY(0);
-	xcar_cabine->setPositionX(30);
-	xcar_cabine->setGlobalZOrder(-1);
-	xcar_cabine->addComponent(xcabine_component);
-	xcabine_component->syncNodeToPhysics();
-	xcabine_component->setSyncFlag(Physics3DComponent::PhysicsSyncFlag::PHYSICS_TO_NODE);
-	xcar_cabine->setCameraMask((unsigned short)CameraFlag::USER2);
-	this->addChild(xcar_cabine, 1);
-
-	auto xconstraint5 = Physics3DHingeConstraint::create(xphysics_rbd_cabine, Vec3(0.0f, 0.0, 0.0f), Vec3(0.f, 1.0f, 0.f));
-	//xconstraint5->setLimit(-90, 90);
-	psychics_scene->getPhysics3DWorld()->addPhysics3DConstraint(xconstraint5);
-	auto xconstraint6 = Physics3DHingeConstraint::create(xphysics_rbd_cabine, Vec3(0.0f, 20.0, 00.0f), Vec3(0.f, 1.0f, 0.f));
-	//xconstraint5->setLimit(-90, 90);
-	psychics_scene->getPhysics3DWorld()->addPhysics3DConstraint(xconstraint6);
-
-**/
 	
-        //Create Car
+	//////////////////////////////////////////////// car
 	Physics3DRigidBodyDes rbd_cabine;
 	rbd_cabine.disableSleep = true;
 	rbd_cabine.mass = 500.0f;
-	rbd_cabine.shape = Physics3DShape::createBox(Vec3(12, 2.0f, 6));
+	rbd_cabine.shape = Physics3DShape::createBox(Vec3(4, 2.0f, 8));
 	physics_rbd_cabine = Physics3DRigidBody::create(&rbd_cabine);
 	auto cabine_component = Physics3DComponent::create(physics_rbd_cabine);
-	car_cabine = Sprite3D::create("box.c3t");
-	car_cabine->setTexture("Gun.png");
-	car_cabine->setPosition3D(Vec3(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y, 0));
-	car_cabine->setPositionZ(0);
-	car_cabine->setPositionY(10);
+	car_cabine = Sprite3D::create("T-90.c3t");
+	car_cabine->setTexture("Main Body 2.png");
+	car_cabine->setScale(3);
+	//car_cabine->setPosition3D(Vec3(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y, 0));
 	car_cabine->setPositionX(0);
+	car_cabine->setPositionY(10);
+	car_cabine->setPositionZ(0);
 	car_cabine->setGlobalZOrder(-1);
 	car_cabine->addComponent(cabine_component);
 	cabine_component->syncNodeToPhysics();
@@ -139,15 +120,20 @@ bool HelloWorld::init()
 	car_cabine->setCameraMask((unsigned short)CameraFlag::USER2);
 	this->addChild(car_cabine, 1);
 
+
 	Physics3DRigidBodyDes rbd_wheel1;
 	rbd_wheel1.disableSleep = true;
 	rbd_wheel1.mass = 15.0f;
-	rbd_wheel1.shape = Physics3DShape::createCylinder(3, 1);
+	//rbd_wheel1.shape = Physics3DShape::createCylinder(3, 1);
+	rbd_wheel1.shape = Physics3DShape::createSphere(1.5);
 	auto physics_rbd_wheel1 = Physics3DRigidBody::create(&rbd_wheel1);
 	auto wheel1_component = Physics3DComponent::create(physics_rbd_wheel1);
-	wheel1 = Sprite3D::create("box.c3t");
+	wheel1 = Sprite3D::create();
 	//wheel1->setTexture("Gun.png");
-	wheel1->setPosition3D(Vec3(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y, 0));
+	//wheel1->setPosition3D(Vec3(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y, 0));
+	wheel1->setPositionX(0);
+	wheel1->setPositionY(10);
+	wheel1->setPositionZ(0);
 	wheel1->setGlobalZOrder(-1);
 	wheel1->addComponent(wheel1_component);
 	wheel1_component->syncNodeToPhysics();
@@ -158,12 +144,16 @@ bool HelloWorld::init()
 	Physics3DRigidBodyDes rbd_wheel2;
 	rbd_wheel2.disableSleep = true;
 	rbd_wheel2.mass = 15.0f;
-	rbd_wheel2.shape = Physics3DShape::createCylinder(3, 1);
+	//rbd_wheel2.shape = Physics3DShape::createCylinder(3, 1);
+	rbd_wheel2.shape = Physics3DShape::createSphere(1.5);
 	auto physics_rbd_wheel2 = Physics3DRigidBody::create(&rbd_wheel2);
 	auto wheel2_component = Physics3DComponent::create(physics_rbd_wheel2);
-	wheel2 = Sprite3D::create("box.c3t");
+	wheel2 = Sprite3D::create();
 	//wheel2->setTexture("Gun.png");
-	wheel2->setPosition3D(Vec3(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y, 0));
+	//wheel2->setPosition3D(Vec3(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y, 0));
+	wheel2->setPositionX(0);
+	wheel2->setPositionY(10);
+	wheel2->setPositionZ(0);
 	wheel2->setGlobalZOrder(-1);
 	wheel2->addComponent(wheel2_component);
 	wheel2_component->syncNodeToPhysics();
@@ -174,12 +164,16 @@ bool HelloWorld::init()
 	Physics3DRigidBodyDes rbd_wheel3;
 	rbd_wheel3.disableSleep = true;
 	rbd_wheel3.mass = 15.0f;
-	rbd_wheel3.shape = Physics3DShape::createCylinder(3, 1);
-	auto physics_rbd_wheel3 = Physics3DRigidBody::create(&rbd_wheel3);
+	rbd_wheel3.shape = Physics3DShape::createSphere(1.5);
+	//rbd_wheel3.shape = Physics3DShape::createCylinder(3, 1);
+	physics_rbd_wheel3 = Physics3DRigidBody::create(&rbd_wheel3);
 	auto wheel3_component = Physics3DComponent::create(physics_rbd_wheel3);
-	wheel3 = Sprite3D::create("box.c3t");
+	wheel3 = Sprite3D::create();
 	//wheel3->setTexture("Gun.png");
-	wheel3->setPosition3D(Vec3(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y, 0));
+	//wheel3->setPosition3D(Vec3(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y, 0));
+	wheel3->setPositionX(0);
+	wheel3->setPositionY(10);
+	wheel3->setPositionZ(0);
 	wheel3->setGlobalZOrder(-1);
 	wheel3->addComponent(wheel3_component);
 	wheel3_component->syncNodeToPhysics();
@@ -190,12 +184,16 @@ bool HelloWorld::init()
 	Physics3DRigidBodyDes rbd_wheel4;
 	rbd_wheel4.disableSleep = true;
 	rbd_wheel4.mass = 15.0f;
-	rbd_wheel4.shape = Physics3DShape::createCylinder(3, 1);
-	auto physics_rbd_wheel4 = Physics3DRigidBody::create(&rbd_wheel4);
+	//rbd_wheel4.shape = Physics3DShape::createCylinder(3, 1);
+	rbd_wheel4.shape = Physics3DShape::createSphere(1.5);
+	physics_rbd_wheel4 = Physics3DRigidBody::create(&rbd_wheel4);
 	auto wheel4_component = Physics3DComponent::create(physics_rbd_wheel4);
-	wheel4 = Sprite3D::create("box.c3t");
+	wheel4 = Sprite3D::create();
 	//wheel3->setTexture("Gun.png");
-	wheel4->setPosition3D(Vec3(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y, 0));
+	//wheel4->setPosition3D(Vec3(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y, 0));
+	wheel4->setPositionX(0);
+	wheel4->setPositionY(10);
+	wheel4->setPositionZ(0);
 	wheel4->setGlobalZOrder(-1);
 	wheel4->addComponent(wheel4_component);
 	wheel4_component->syncNodeToPhysics();
@@ -209,12 +207,13 @@ bool HelloWorld::init()
 	rbd_wheel_bar.shape = Physics3DShape::createBox(Vec3(2, 2.0f, 6));
 	physics_rbd_wheel_bar = Physics3DRigidBody::create(&rbd_wheel_bar);
 	auto car_wheel_bar_component = Physics3DComponent::create(physics_rbd_wheel_bar);
-	car_wheel_bar = Sprite3D::create("box.c3t");
-	car_wheel_bar->setTexture("Gun.png");
-	car_wheel_bar->setPosition3D(Vec3(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y, 0));
-	car_wheel_bar->setPositionZ(0);
-	car_wheel_bar->setPositionY(10);
+	car_wheel_bar = Sprite3D::create();
+	//car_wheel_bar->setTexture("Gun.png");
+	car_wheel_bar->setScale(0.01);
 	car_wheel_bar->setPositionX(0);
+	car_wheel_bar->setPositionY(10);
+	car_wheel_bar->setPositionZ(0);
+	//car_wheel_bar->setPosition3D(Vec3(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y, 0));
 	car_wheel_bar->setGlobalZOrder(-1);
 	car_wheel_bar->addComponent(car_wheel_bar_component);
 	car_wheel_bar_component->syncNodeToPhysics();
@@ -222,21 +221,67 @@ bool HelloWorld::init()
 	car_wheel_bar->setCameraMask((unsigned short)CameraFlag::USER2);
 	this->addChild(car_wheel_bar, 1);
 
-	auto constraint = Physics3DHingeConstraint::create(physics_rbd_cabine, physics_rbd_wheel1, Vec3(6.0f, 0.0, 0.0f), Vec3(0.f, -3.0f, 0.f), Vec3(0.0f, 0.0, 1.0f), Vec3(0.f, 1.0f, 0.f));
+	auto constraint = Physics3DHingeConstraint::create(physics_rbd_cabine, physics_rbd_wheel1, Vec3(0.0f, 0.0, 6.0f), Vec3(0.f, -3.0f, 0.f), Vec3(1.0f, 0.0, 0.0f), Vec3(0.f, 1.0f, 0.f));
 	psychics_scene->getPhysics3DWorld()->addPhysics3DConstraint(constraint);
-	auto constraint2 = Physics3DHingeConstraint::create(physics_rbd_cabine, physics_rbd_wheel2, Vec3(6.0f, 0.0, 0.0f), Vec3(0.f, 3.0f, 0.f), Vec3(0.0f, 0.0, 1.0f), Vec3(0.f, 1.0f, 0.f));
+	auto constraint2 = Physics3DHingeConstraint::create(physics_rbd_cabine, physics_rbd_wheel2, Vec3(0.0f, 0.0, 6.0f), Vec3(0.f, 3.0f, 0.f), Vec3(1.0f, 0.0, 0.0f), Vec3(0.f, 1.0f, 0.f));
 	psychics_scene->getPhysics3DWorld()->addPhysics3DConstraint(constraint2);
 
 
-	auto constraint5 = Physics3DHingeConstraint::create(physics_rbd_cabine, physics_rbd_wheel_bar, Vec3(-6.0f, 0.0, 0.0f), Vec3(0.f, 0.0f, 0.f), Vec3(0.0f, 1.0, 0.0f), Vec3(0.f, 1.0f, 0.f));
-	//constraint5->setLimit(-10, 10, 0.9f, 0.01f, 0.0f);
+	constraint5 = Physics3DHingeConstraint::create(physics_rbd_cabine, physics_rbd_wheel_bar, Vec3(0.0f, 0.0, -6.0f), Vec3(0.f, 0.0f, 0.f), Vec3(0.0f, 1.0, 0.0f), Vec3(0.f, 1.0f, 0.f));
+	constraint5->setLimit(CC_DEGREES_TO_RADIANS(-0.5), CC_DEGREES_TO_RADIANS(0.5));
 	psychics_scene->getPhysics3DWorld()->addPhysics3DConstraint(constraint5);
 
 
-	auto constraint3 = Physics3DHingeConstraint::create(physics_rbd_wheel_bar, physics_rbd_wheel3, Vec3(-3.0f, 0.0, 0.0f), Vec3(0.f, -3.0f, 0.f), Vec3(0.0f, 0.0, 1.0f), Vec3(0.f, 1.0f, 0.f));
+	auto constraint3 = Physics3DHingeConstraint::create(physics_rbd_wheel_bar, physics_rbd_wheel3, Vec3(0.0f, 0.0, -3.0f), Vec3(0.f, -3.0f, 0.f), Vec3(1.0f, 0.0, 0.0f), Vec3(0.f, 1.0f, 0.f));
 	psychics_scene->getPhysics3DWorld()->addPhysics3DConstraint(constraint3);
-	auto constraint4 = Physics3DHingeConstraint::create(physics_rbd_wheel_bar, physics_rbd_wheel4, Vec3(-3.0f, 0.0, 0.0f), Vec3(0.f, 3.0f, 0.f), Vec3(0.0f, 0.0, 1.0f), Vec3(0.f, 1.0f, 0.f));
+	auto constraint4 = Physics3DHingeConstraint::create(physics_rbd_wheel_bar, physics_rbd_wheel4, Vec3(0.0f, 0.0, -3.0f), Vec3(0.f, 3.0f, 0.f), Vec3(1.0f, 0.0, 0.0f), Vec3(0.f, 1.0f, 0.f));
 	psychics_scene->getPhysics3DWorld()->addPhysics3DConstraint(constraint4);
+
+
+	//add a point light
+	auto light = PointLight::create(Vec3(0, 50, 0), Color3B(255, 255, 255), 150);
+	addChild(light);
+	//set the ambient light 
+	auto ambient = AmbientLight::create(Color3B(55, 55, 55));
+	addChild(ambient);
+
+
+	/**
+	Physics3DRigidBodyDes boxesrbDes;
+	boxesrbDes.mass = 1.f;
+	boxesrbDes.shape = Physics3DShape::createBox(Vec3(5, 5, 5));
+	float start_x = 10- ARRAY_SIZE_X / 2;
+	float start_y = 0 + 5.0f;
+	float start_z = 10 - ARRAY_SIZE_Z / 2;
+
+	for (int k = 0; k<ARRAY_SIZE_Y; k++)
+	{
+		for (int i = 0; i<ARRAY_SIZE_X; i++)
+		{
+			for (int j = 0; j<ARRAY_SIZE_Z; j++)
+			{
+				float x = 1.0*i + start_x;
+				float y = 5.0 + 1.0*k + start_y;
+				float z = 1.0*j + start_z;
+				boxesrbDes.originalTransform.setIdentity();
+				boxesrbDes.originalTransform.translate(x, y, z);
+
+				auto sprite = PhysicsSprite3D::create("box.c3t", &boxesrbDes);
+				sprite->setTexture("plane.png");
+				sprite->setCameraMask((unsigned short)CameraFlag::USER1);
+				sprite->setScale(1.0f / sprite->getContentSize().width);
+				this->addChild(sprite);
+				sprite->setPosition3D(Vec3(x, y, z));
+				sprite->syncNodeToPhysics();
+
+				sprite->setSyncFlag(Physics3DComponent::PhysicsSyncFlag::PHYSICS_TO_NODE);
+			}
+		}
+	}
+
+	**/
+
+
 
 	auto listener = EventListenerTouchAllAtOnce::create();
 	listener->onTouchesBegan = CC_CALLBACK_2(HelloWorld::onTouchesBegan, this);
@@ -245,49 +290,47 @@ bool HelloWorld::init()
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
 
 
-	psychics_scene->setPhysics3DDebugCamera(camera); 
+	//psychics_scene->setPhysics3DDebugCamera(camera); 
 	schedule(schedule_selector(HelloWorld::myupdate), .005);
-	this->scheduleUpdate();
+	//this->scheduleUpdate();
 	
     return true;
 }
 
 void HelloWorld::myupdate(float dt){
-	camera->setPosition3D(car_cabine->getPosition3D() + Vec3(100.0f * sinf(_angle), 50.0f, 100.0f * cosf(_angle)));
+	camera->setPosition3D(car_cabine->getPosition3D() + Vec3(100.0f * sinf(_angle), 30.0f, 100.0f * cosf(_angle)));
 	camera->lookAt(car_cabine->getPosition3D(), Vec3(0.0f, 1.0f, 0.0f));
-
-	if (_hud->movingleft == true){
 	
+	if (_hud->movingleft == true){
+		constraint5->setLimit(CC_DEGREES_TO_RADIANS(-20), CC_DEGREES_TO_RADIANS(0));
 		physics_rbd_wheel_bar->setAngularVelocity(Vec3(0.0, 1.0, 0.0));
-		physics_rbd_wheel_bar->setAngularFactor(Vec3(0.0, 0.0, 0.0));
+		//physics_rbd_wheel_bar->setAngularFactor(Vec3(0.0, 0.0, 0.0));
 	}
 	if (_hud->movingright == true){
+		constraint5->setLimit(CC_DEGREES_TO_RADIANS(0), CC_DEGREES_TO_RADIANS(20));
 		physics_rbd_wheel_bar->setAngularVelocity(Vec3(0.0, -1.0, 0.0));
-		physics_rbd_wheel_bar->setAngularFactor(Vec3(0.0, 0.0, 0.0));
+		//physics_rbd_wheel_bar->setAngularFactor(Vec3(0.0, 0.0, 0.0));
 	}
-	//Direction Velocity
-	Vec3 mynearP((int)wheel1->getPosition3D().x, 0.0, (int)wheel1->getPosition3D().z), myfarP((int)wheel3->getPosition3D().x, 0.0, (int)wheel3->getPosition3D().z);
-	Vec3 mynearP2((int)wheel2->getPosition3D().x, 0.0, (int)wheel2->getPosition3D().z), myfarP2((int)wheel4->getPosition3D().x, 0.0, (int)wheel4->getPosition3D().z);
-	Vec3 mydir(myfarP - mynearP);
-	Vec3 mydir2(myfarP2 - mynearP2);
 
 	if (_hud->movingup == true){
-
+		constraint5->setLimit(CC_DEGREES_TO_RADIANS(-0.5), CC_DEGREES_TO_RADIANS(0.5));
+		Vec3 mynearP((int)wheel1->getPosition3D().x, 0.0, (int)wheel1->getPosition3D().z), myfarP((int)wheel3->getPosition3D().x, 0.0, (int)wheel3->getPosition3D().z);
+		Vec3 mynearP2((int)wheel2->getPosition3D().x, 0.0, (int)wheel2->getPosition3D().z), myfarP2((int)wheel4->getPosition3D().x, 0.0, (int)wheel4->getPosition3D().z);
+		Vec3 mydir(myfarP - mynearP);
+		Vec3 mydir2(myfarP2 - mynearP2);
 		Vec3 mylinearVel = (mydir+mydir2)/2;
 		mylinearVel.normalize();
-		mylinearVel *= 25.0f;
+		mylinearVel *= 50.0f;
 		mylinearVel.y = 0;
-		physics_rbd_wheel_bar->setLinearVelocity(mylinearVel);
-		physics_rbd_wheel_bar->setAngularVelocity(Vec3(0.0, 0.0, 0.0));
-		physics_rbd_wheel_bar->setAngularFactor(Vec3(0.0, 0.0, 0.0));
-
+		physics_rbd_wheel3->setLinearVelocity(mylinearVel);
+		physics_rbd_wheel4->setLinearVelocity(mylinearVel);
 	}
 
 }
 
 void HelloWorld::onTouchesBegan(const std::vector<cocos2d::Touch*>& touches, cocos2d::Event  *event) {
-	shootBox = true;
-	event->stopPropagation();
+	//shootBox = true;
+	//event->stopPropagation();
 }
 
 void HelloWorld::onTouchesMoved(const std::vector<cocos2d::Touch*>& touches, cocos2d::Event  *event) {
@@ -299,12 +342,12 @@ void HelloWorld::onTouchesMoved(const std::vector<cocos2d::Touch*>& touches, coc
 		_angle -= CC_DEGREES_TO_RADIANS(delta.x);
 		camera->setPosition3D(car_cabine->getPosition3D() + Vec3(100.0f * sinf(_angle), 50.0f, 100.0f * cosf(_angle)));
 		camera->lookAt(car_cabine->getPosition3D(), Vec3(0.0f, 1.0f, 0.0f));
-	
+		/**
 		if (delta.lengthSquared() > 16)
 		{
 			shootBox = false;
-		}
-		event->stopPropagation();
+		}**/
+		//event->stopPropagation();
 
 		////Moving obj in camera direction
 		/**
@@ -319,7 +362,7 @@ void HelloWorld::onTouchesMoved(const std::vector<cocos2d::Touch*>& touches, coc
 }
 
 void HelloWorld::onTouchesEnded(const std::vector<cocos2d::Touch*>& touches, cocos2d::Event  *event) {
-
+	/**
 	if (!shootBox) return;
 	if (!touches.empty())
 	{
@@ -331,31 +374,40 @@ void HelloWorld::onTouchesEnded(const std::vector<cocos2d::Touch*>& touches, coc
 		Vec3 dir(farP - nearP);
 		shootBoxfunc(camera->getPosition3D() + dir * 10.0f);
 		event->stopPropagation();
-	}
+	}**/
+	Vec3 mynearP((int)wheel1->getPosition3D().x, 0.0, (int)wheel1->getPosition3D().z), myfarP((int)wheel3->getPosition3D().x, 0.0, (int)wheel3->getPosition3D().z);
+	Vec3 mynearP2((int)wheel2->getPosition3D().x, 0.0, (int)wheel2->getPosition3D().z), myfarP2((int)wheel4->getPosition3D().x, 0.0, (int)wheel4->getPosition3D().z);
+	Vec3 mydir(myfarP - mynearP);
+	Vec3 mydir2(myfarP2 - mynearP2);
+	Vec3 mylinearVel = (mydir + mydir2) / 2;
+	mylinearVel.normalize();
+	mylinearVel *= 30.0f;
+	mylinearVel.y = 0;
+	shootBoxfunc(mylinearVel);
 }
 
 //Throwing Object
 void HelloWorld::shootBoxfunc(const cocos2d::Vec3 &des)
 {
-	Vec3 linearVel = des - camera->getPosition3D();
-	linearVel.normalize();
-	linearVel *= 100.0f;
+	//Vec3 linearVel = des -camera->getPosition3D();
+	//linearVel.normalize();
+	//linearVel *= 100.0f;
 
 	Physics3DRigidBodyDes rbDes;
-	rbDes.originalTransform.translate(camera->getPosition3D());
+	rbDes.originalTransform.translate(car_cabine->getPosition3D());
 	rbDes.mass = 1.f;
-	rbDes.shape = Physics3DShape::createBox(Vec3(0.5f, 0.5f, 0.5f));
+	rbDes.shape = Physics3DShape::createSphere(0.25);
 	auto sprite = PhysicsSprite3D::create("box.c3t", &rbDes);
-	sprite->setTexture("plane.png");
+	sprite->setTexture("Gun.png");
 
 	auto rigidBody = static_cast<Physics3DRigidBody*>(sprite->getPhysicsObj());
 	rigidBody->setLinearFactor(Vec3::ONE);
-	rigidBody->setLinearVelocity(linearVel);
+	rigidBody->setLinearVelocity(des*15);
 	rigidBody->setAngularVelocity(Vec3::ZERO);
 	rigidBody->setCcdMotionThreshold(0.5f);
 	rigidBody->setCcdSweptSphereRadius(0.4f);
 
-	sprite->setPosition3D(camera->getPosition3D());
+	sprite->setPosition3D(Vec3(car_cabine->getPosition3D().x, car_cabine->getPosition3D().y+4, car_cabine->getPosition3D().z));
 	sprite->setScale(0.5f);
 	sprite->syncNodeToPhysics();
 	sprite->setSyncFlag(Physics3DComponent::PhysicsSyncFlag::PHYSICS_TO_NODE); 
